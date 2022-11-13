@@ -3,8 +3,13 @@
 namespace Dotnet_Angular.Migrations
 {
     [Migration(2)]
-    public class AddPostsTable : AutoReversingMigration
+    public class AddPostsTable : Migration
     {
+        public override void Down()
+        {
+            Delete.Table("POSTS");
+        }
+
         public override void Up()
         {
             Create.Table("POSTS")
