@@ -11,16 +11,21 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
 string ConnectionString = builder.Configuration.GetConnectionString("MySQL");
+// Injection de dépendance = même dépendance pour toutes les class qui l'injecte 
 builder.Services.AddSingleton(new DefaultSqlConnectionFactory(ConnectionString));
 
+// Injection de dépendance = dépendance différents pour chaque class qui injecte
 builder.Services.AddScoped<IPostsRepository, PostsRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 
+//Ajoute le service pour le Swagger
 builder.Services.AddSwaggerDocument();
+// ... pour le cors
 builder.Services.AddCors();
 
+// Configure la migration 
 builder.Services.AddFluentMigratorCore()
     .ConfigureRunner(config => config
         .AddMySql5()
@@ -29,6 +34,7 @@ builder.Services.AddFluentMigratorCore()
     .AddLogging(lb => lb.AddFluentMigratorConsole()
     );
 
+// Configure le middleware pour le token JWT
 string JwtKey = builder.Configuration["Jwt"];
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -54,6 +60,7 @@ else
     app.UseSwaggerUi3();
 }
 
+// Lance la migration
 using var scope = app.Services.CreateScope();
 var migrator = scope.ServiceProvider.GetService<IMigrationRunner>()!;
 migrator.MigrateUp();
@@ -62,6 +69,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+// Permet que le cors te fasse pas chier (autorise n'importe quoi)
 app.UseCors(c =>
 {
     c.AllowAnyHeader();

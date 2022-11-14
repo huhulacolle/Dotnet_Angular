@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Dotnet_Angular.Controllers
 {
+    // [Authorize] = active le middlware jwt pour cette route (peut aussi être activé individuellement pour chaque route)
     [Authorize]
     [Route("api/[controller]")]
     [ApiController]
@@ -17,6 +18,8 @@ namespace Dotnet_Angular.Controllers
             this.postsRepository = postsRepository;
         }
 
+        // [AllowAnonymous] = pas besoin de token pour cette route
+        // [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Posts>>> GetPostAsync()
         {
@@ -24,6 +27,7 @@ namespace Dotnet_Angular.Controllers
             return Ok(result);
         }
 
+        // Reçois les données via le Body
         [HttpPost]
         public async Task<IActionResult> PostPostsAsync(Posts posts)
         {
@@ -43,6 +47,7 @@ namespace Dotnet_Angular.Controllers
             }
         }
 
+        // Reçois les données via les params
         [HttpPost("exemple")]
         public async Task<IActionResult> PostPostsAsyncDict(string title, string content)
         {
