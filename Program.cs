@@ -21,7 +21,7 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 
 //Ajoute le service pour le Swagger
-builder.Services.AddSwaggerDocument();
+builder.Services.AddSwaggerGen();
 // ... pour le cors
 builder.Services.AddCors();
 
@@ -56,8 +56,8 @@ if (!app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseOpenApi();
-    app.UseSwaggerUi3();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 // Lance la migration
