@@ -16,17 +16,20 @@ import { HttpClient, HttpHeaders, HttpResponse, HttpResponseBase } from '@angula
 export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL');
 
 @Injectable()
-export class PostsClient {
+export class Client {
     private http: HttpClient;
     private baseUrl: string;
     protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
 
     constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
         this.http = http;
-        this.baseUrl = baseUrl !== undefined && baseUrl !== null ? baseUrl : "https://localhost:7068";
+        this.baseUrl = baseUrl !== undefined && baseUrl !== null ? baseUrl : "";
     }
 
-    getPost(): Observable<Posts[]> {
+    /**
+     * @return Success
+     */
+    postsAll(): Observable<Posts[]> {
         let url_ = this.baseUrl + "/api/Posts";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -34,16 +37,16 @@ export class PostsClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
-                "Accept": "application/json"
+                "Accept": "text/plain"
             })
         };
 
         return this.http.request("get", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processGetPost(response_);
+            return this.processPostsAll(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processGetPost(response_ as any);
+                    return this.processPostsAll(response_ as any);
                 } catch (e) {
                     return _observableThrow(e) as any as Observable<Posts[]>;
                 }
@@ -52,7 +55,7 @@ export class PostsClient {
         }));
     }
 
-    protected processGetPost(response: HttpResponseBase): Observable<Posts[]> {
+    protected processPostsAll(response: HttpResponseBase): Observable<Posts[]> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
@@ -81,11 +84,15 @@ export class PostsClient {
         return _observableOf(null as any);
     }
 
-    postPosts(posts: Posts): Observable<FileResponse | null> {
+    /**
+     * @param body (optional) 
+     * @return Success
+     */
+    posts(body: Posts | undefined): Observable<void> {
         let url_ = this.baseUrl + "/api/Posts";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(posts);
+        const content_ = JSON.stringify(body);
 
         let options_ : any = {
             body: content_,
@@ -93,36 +100,34 @@ export class PostsClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
-                "Accept": "application/octet-stream"
             })
         };
 
         return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processPostPosts(response_);
+            return this.processPosts(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processPostPosts(response_ as any);
+                    return this.processPosts(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<FileResponse | null>;
+                    return _observableThrow(e) as any as Observable<void>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<FileResponse | null>;
+                return _observableThrow(response_) as any as Observable<void>;
         }));
     }
 
-    protected processPostPosts(response: HttpResponseBase): Observable<FileResponse | null> {
+    protected processPosts(response: HttpResponseBase): Observable<void> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            const fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-            const fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -131,11 +136,20 @@ export class PostsClient {
         return _observableOf(null as any);
     }
 
-    postPostsAsyncDict(title: string | null | undefined, content: string | null | undefined): Observable<FileResponse | null> {
+    /**
+     * @param title (optional) 
+     * @param content (optional) 
+     * @return Success
+     */
+    exemple(title: string | undefined, content: string | undefined): Observable<void> {
         let url_ = this.baseUrl + "/api/Posts/exemple?";
-        if (title !== undefined && title !== null)
+        if (title === null)
+            throw new Error("The parameter 'title' cannot be null.");
+        else if (title !== undefined)
             url_ += "title=" + encodeURIComponent("" + title) + "&";
-        if (content !== undefined && content !== null)
+        if (content === null)
+            throw new Error("The parameter 'content' cannot be null.");
+        else if (content !== undefined)
             url_ += "content=" + encodeURIComponent("" + content) + "&";
         url_ = url_.replace(/[?&]$/, "");
 
@@ -143,36 +157,34 @@ export class PostsClient {
             observe: "response",
             responseType: "blob",
             headers: new HttpHeaders({
-                "Accept": "application/octet-stream"
             })
         };
 
         return this.http.request("post", url_, options_).pipe(_observableMergeMap((response_ : any) => {
-            return this.processPostPostsAsyncDict(response_);
+            return this.processExemple(response_);
         })).pipe(_observableCatch((response_: any) => {
             if (response_ instanceof HttpResponseBase) {
                 try {
-                    return this.processPostPostsAsyncDict(response_ as any);
+                    return this.processExemple(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<FileResponse | null>;
+                    return _observableThrow(e) as any as Observable<void>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<FileResponse | null>;
+                return _observableThrow(response_) as any as Observable<void>;
         }));
     }
 
-    protected processPostPostsAsyncDict(response: HttpResponseBase): Observable<FileResponse | null> {
+    protected processExemple(response: HttpResponseBase): Observable<void> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            const fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-            const fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -180,24 +192,16 @@ export class PostsClient {
         }
         return _observableOf(null as any);
     }
-}
 
-@Injectable()
-export class UserClient {
-    private http: HttpClient;
-    private baseUrl: string;
-    protected jsonParseReviver: ((key: string, value: any) => any) | undefined = undefined;
-
-    constructor(@Inject(HttpClient) http: HttpClient, @Optional() @Inject(API_BASE_URL) baseUrl?: string) {
-        this.http = http;
-        this.baseUrl = baseUrl !== undefined && baseUrl !== null ? baseUrl : "https://localhost:7068";
-    }
-
-    login(user: User): Observable<Token> {
+    /**
+     * @param body (optional) 
+     * @return Success
+     */
+    login(body: User | undefined): Observable<Token> {
         let url_ = this.baseUrl + "/api/User/login";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(user);
+        const content_ = JSON.stringify(body);
 
         let options_ : any = {
             body: content_,
@@ -205,7 +209,7 @@ export class UserClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
-                "Accept": "application/json"
+                "Accept": "text/plain"
             })
         };
 
@@ -245,11 +249,15 @@ export class UserClient {
         return _observableOf(null as any);
     }
 
-    register(user: User): Observable<FileResponse | null> {
+    /**
+     * @param body (optional) 
+     * @return Success
+     */
+    register(body: User | undefined): Observable<void> {
         let url_ = this.baseUrl + "/api/User/register";
         url_ = url_.replace(/[?&]$/, "");
 
-        const content_ = JSON.stringify(user);
+        const content_ = JSON.stringify(body);
 
         let options_ : any = {
             body: content_,
@@ -257,7 +265,6 @@ export class UserClient {
             responseType: "blob",
             headers: new HttpHeaders({
                 "Content-Type": "application/json",
-                "Accept": "application/octet-stream"
             })
         };
 
@@ -268,25 +275,24 @@ export class UserClient {
                 try {
                     return this.processRegister(response_ as any);
                 } catch (e) {
-                    return _observableThrow(e) as any as Observable<FileResponse | null>;
+                    return _observableThrow(e) as any as Observable<void>;
                 }
             } else
-                return _observableThrow(response_) as any as Observable<FileResponse | null>;
+                return _observableThrow(response_) as any as Observable<void>;
         }));
     }
 
-    protected processRegister(response: HttpResponseBase): Observable<FileResponse | null> {
+    protected processRegister(response: HttpResponseBase): Observable<void> {
         const status = response.status;
         const responseBlob =
             response instanceof HttpResponse ? response.body :
             (response as any).error instanceof Blob ? (response as any).error : undefined;
 
         let _headers: any = {}; if (response.headers) { for (let key of response.headers.keys()) { _headers[key] = response.headers.get(key); }}
-        if (status === 200 || status === 206) {
-            const contentDisposition = response.headers ? response.headers.get("content-disposition") : undefined;
-            const fileNameMatch = contentDisposition ? /filename="?([^"]*?)"?(;|$)/g.exec(contentDisposition) : undefined;
-            const fileName = fileNameMatch && fileNameMatch.length > 1 ? fileNameMatch[1] : undefined;
-            return _observableOf({ fileName: fileName, data: responseBlob as any, status: status, headers: _headers });
+        if (status === 200) {
+            return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
+            return _observableOf(null as any);
+            }));
         } else if (status !== 200 && status !== 204) {
             return blobToText(responseBlob).pipe(_observableMergeMap((_responseText: string) => {
             return throwException("An unexpected server error occurred.", status, _responseText, _headers);
@@ -297,8 +303,7 @@ export class UserClient {
 }
 
 export class Posts implements IPosts {
-    id!: number;
-    title!: string;
+    title?: string | undefined;
     content?: string | undefined;
     createdAt?: Date | undefined;
 
@@ -313,7 +318,6 @@ export class Posts implements IPosts {
 
     init(_data?: any) {
         if (_data) {
-            this.id = _data["id"];
             this.title = _data["title"];
             this.content = _data["content"];
             this.createdAt = _data["createdAt"] ? new Date(_data["createdAt"].toString()) : <any>undefined;
@@ -329,7 +333,6 @@ export class Posts implements IPosts {
 
     toJSON(data?: any) {
         data = typeof data === 'object' ? data : {};
-        data["id"] = this.id;
         data["title"] = this.title;
         data["content"] = this.content;
         data["createdAt"] = this.createdAt ? this.createdAt.toISOString() : <any>undefined;
@@ -338,14 +341,13 @@ export class Posts implements IPosts {
 }
 
 export interface IPosts {
-    id: number;
-    title: string;
+    title?: string | undefined;
     content?: string | undefined;
     createdAt?: Date | undefined;
 }
 
 export class Token implements IToken {
-    key!: string;
+    key?: string | undefined;
 
     constructor(data?: IToken) {
         if (data) {
@@ -377,12 +379,12 @@ export class Token implements IToken {
 }
 
 export interface IToken {
-    key: string;
+    key?: string | undefined;
 }
 
 export class User implements IUser {
-    email!: string;
-    password!: string;
+    email?: string | undefined;
+    password?: string | undefined;
 
     constructor(data?: IUser) {
         if (data) {
@@ -416,15 +418,8 @@ export class User implements IUser {
 }
 
 export interface IUser {
-    email: string;
-    password: string;
-}
-
-export interface FileResponse {
-    data: Blob;
-    status: number;
-    fileName?: string;
-    headers?: { [name: string]: any };
+    email?: string | undefined;
+    password?: string | undefined;
 }
 
 export class ApiException extends Error {

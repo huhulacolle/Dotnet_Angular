@@ -71,7 +71,7 @@ export class LoginRegisterComponent implements OnInit {
       this.authService.login(user)
       .then(
         data => {
-          this.storageService.saveUser(data.key);
+          this.storageService.saveUser(data.key as string);
           this.router.navigateByUrl("/Post")
         }
       )

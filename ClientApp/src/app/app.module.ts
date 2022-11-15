@@ -1,5 +1,5 @@
 import { PostsComponent } from './components/posts/posts.component';
-import { API_BASE_URL, PostsClient, UserClient } from './client/clientSwagger';
+import { API_BASE_URL, Client } from './client/clientSwagger';
 import { LoginRegisterComponent } from './components/login-register/login-register.component';
 import { BrowserModule } from '@angular/platform-browser';
 import { APP_INITIALIZER, NgModule } from '@angular/core';
@@ -29,8 +29,7 @@ import { TokenInterceptorService } from './services/token-interceptor.service';
     NgbModule
   ],
   providers: [
-    UserClient,
-    PostsClient,
+    Client,
     {
 			provide: APP_INITIALIZER,
 			useFactory: apiUrlServiceFactory,

@@ -1,4 +1,4 @@
-import { User, UserClient, FileResponse, Token } from './../client/clientSwagger';
+import { User, Token, Client } from './../client/clientSwagger';
 import { Injectable } from '@angular/core';
 import { lastValueFrom } from 'rxjs';
 
@@ -8,14 +8,14 @@ import { lastValueFrom } from 'rxjs';
 export class AuthService {
 
   constructor(
-    private userClient: UserClient
+    private userClient: Client
   ) { }
 
   login(user: User): Promise<Token> {
     return lastValueFrom(this.userClient.login(user));
   }
 
-  register(user: User): Promise<FileResponse | null> {
+  register(user: User): Promise<void> {
     return lastValueFrom(this.userClient.register(user))
   }
 }
