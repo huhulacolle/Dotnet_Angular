@@ -13,7 +13,7 @@ namespace Dotnet_Angular.Migrations
         public override void Up()
         {
             Create.Table("POSTS")
-                .WithColumn("id").AsInt32().PrimaryKey().Identity()
+                .WithColumn("id2").AsInt32().PrimaryKey().Identity()
                 .WithColumn("title").AsString()
                 .WithColumn("content").AsString()
                 .WithColumn("date").AsDate();
